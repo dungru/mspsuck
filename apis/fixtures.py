@@ -46,6 +46,7 @@ def adhoc(request):
     # Enable connection debugging
     ansible_display = display.Display()
     ansible_display.verbosity = request.config.getoption("--verbosity")
+    ansible_display.verbosity = 0  # Disable the connection
 
     inventory_file = Path(
         request.config.rootdir,

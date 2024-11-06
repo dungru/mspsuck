@@ -47,7 +47,14 @@ class Dut(object):
         #     handler = next_handler
 
     def shell(self, cmd, **kwargs):
+        clear_log_result = self.__adhoc.run([self.name], "raw", "dmesg -c", **kwargs)
+        if clear_log_result[self.name].failed:
+            print(f"Failed to clear kernel log: {clear_log_result[self.name].stderr}")
+
         result = self.__adhoc.run([self.name], "raw", cmd, **kwargs)
+
+        kernel_log_result = self.__adhoc.run([self.name], "raw", "dmesg -c", **kwargs)
+        kernel_log = kernel_log_result[self.name].stdout if not kernel_log_result[self.name].failed else "Failed to retrieve kernel log"
 
         if result[self.name].failed:
             raise OpenwrtError(
@@ -56,7 +63,8 @@ class Dut(object):
                 f"command: {cmd}\n"
                 f"return_code: {result[self.name].rc}\n"
                 f"stdout: {result[self.name].stdout}\n"
-                f"stderr: {result[self.name].stderr}"
+                f"stderr: {result[self.name].stderr}\n"
+                f"kernel_log: {kernel_log}"
             )
 
-        return result[self.name].stdout.strip()
+        return result[self.name].stdout.strip(), kernel_log.strip()

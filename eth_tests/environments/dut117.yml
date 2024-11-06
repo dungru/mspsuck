@@ -4,5 +4,7 @@ topology:
     ansible_ssh_pass:
   hosts:
     dut1:
+      ansible_host: 192.168.5.114
+    dut2:
       ansible_host: 192.168.5.115
 

@@ -21,9 +21,11 @@ def test_reboot_01(topo):
 
     # Packet compare
     try:
-        stdout = topo.dut1.shell("reboot")
+        stdout, klog = topo.dut1.shell("iwpriv rax0 show pleinfo")
+        print(f"{klog}")
+        stdout, klog = topo.dut2.shell("uname -a")
+        print(f"{stdout}")
     except Exception as e:
         print(f"Error executing shell command: {e}")
         raise
-    print(stdout)
     print("[P.A.S.S]")
