@@ -17,7 +17,6 @@ pytest_plugins = [
 def topo(request, adhoc):
     # if request.config.getoption("--skip_topo"):
     #     return
-    print("dutsai: topo\n")
     topo = AttrDict()
     # sdk_env = []
     # skip_dut = request.config.getoption("--skip_dut")
@@ -40,7 +39,6 @@ def pytest_addoption(parser):
     )
 
 
-# @pytest.fixture(scope="function")
-# def assertion_teardown(request, topo):
-#     testsfailed = request.session.testsfailed
-#     yield
+@pytest.fixture(scope="function")
+def assertion_teardown(request, topo):
+    yield

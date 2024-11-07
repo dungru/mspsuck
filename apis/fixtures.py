@@ -46,7 +46,6 @@ def adhoc(request):
     # Enable connection debugging
     ansible_display = display.Display()
     ansible_display.verbosity = request.config.getoption("--verbosity")
-    ansible_display.verbosity = 0  # Disable the connection
 
     inventory_file = Path(
         request.config.rootdir,
@@ -127,8 +126,12 @@ def monkeypatch_session():
             # if text is not an ansible returns, do noting
             pass
 
+        # self.display(
+        #     f"# Ansible task on '{host}'\n{text}",
+        #     color=constants.COLOR_VERBOSE,
+        # )
         self.display(
-            f"# Ansible task on '{host}'\n{text}",
+            f"# Ansible task on '{host}'",
             color=constants.COLOR_VERBOSE,
         )
 
