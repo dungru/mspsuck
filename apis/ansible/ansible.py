@@ -81,28 +81,26 @@ class AdHoc(object):
         ):
             v = kwargs.pop(arg_name, None)
             v and tmp_cliargs.update({arg_name: v})
+        # Assemble module argument string
+        if args:
+            kwargs.update(dict(_raw_params=" ".join(args)))
+        # create data structure that represents our play, including tasks, this is basically what our YAML loader does internally.
+        play_source = dict(
+            name="pytest-ansible",
+            hosts=hosts,
+            gather_facts='no',
+            tasks=[
+                dict(action=dict(module=module_name, args=kwargs))
+            ]
+        )
 
+        # Create play object, playbook objects use .load instead of init or new methods,
+        # this will also automatically create the task objects from the info provided in play_source
+        play = Play().load(play_source, variable_manager=self.__var_mgr, loader=self.__loader)
+        context.CLIARGS = ImmutableDict(tmp_cliargs)
+        # Actually run it
         try:
-            # Assemble module argument string
-            if args:
-                kwargs.update(dict(_raw_params=" ".join(args)))
-
-            context.CLIARGS = ImmutableDict(tmp_cliargs)
-            tqm.run(
-                Play().load(
-                    dict(
-                        name="pytest-ansible",
-                        hosts=hosts,
-                        gather_facts="no",
-                        tasks=[
-                            dict(action=dict(module=module_name, args=kwargs))
-                        ],
-                    ),
-                    variable_manager=self.__var_mgr,
-                    loader=self.__loader,
-                )
-            )
-
+            tqm.run(play)  # most interesting data for a play is actually sent to the callback's methods
         finally:
             # Always need to cleanup child procs and the structures we use
             # to communicate with them.

@@ -28,5 +28,4 @@ def test_reboot_01(topo):
     except Exception as e:
         print(f"Error executing shell command: {e}")
         raise
-
     print("[P.A.S.S]")
