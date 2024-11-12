@@ -27,6 +27,8 @@ def test_reboot_01(topo):
         print(f"{stdout}")
         stdout = topo.dut3.shell_local_ns("iwpriv rax0 show vlaninfo")
         print(f"{stdout}")
+        # stdout = topo.dut4.shell_ns("iwpriv rax0 stat")
+        # print(f"{stdout}")
     except Exception as e:
         print(f"Error executing shell command: {e}")
         raise

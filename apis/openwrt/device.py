@@ -93,3 +93,26 @@ class Dut(object):
         # Execute the provided command
         command_to_run = f"sudo ip netns exec {self.namespace_name} ssh -o StrictHostKeyChecking=no -o HostKeyAlgorithms=+ssh-rsa {self.remote_user}@{self.remote_host} '{cmd};dmesg -c'"
         return self.execute_command(command_to_run)
+
+    def shell_ns(self, cmd, **kwargs):
+        clear_log_result = self.__adhoc.run_ns([self.name], "raw", "dmesg -c", **kwargs)
+        if clear_log_result[self.name].failed:
+            print(f"Failed to clear kernel log: {clear_log_result[self.name].stderr}")
+
+        result = self.__adhoc.run_ns([self.name], "raw", cmd, **kwargs)
+
+        kernel_log_result = self.__adhoc.run([self.name], "raw", "dmesg -c", **kwargs)
+        kernel_log = kernel_log_result[self.name].stdout if not kernel_log_result[self.name].failed else "Failed to retrieve kernel log"
+
+        if result[self.name].failed:
+            raise OpenwrtError(
+                f"Error occurred while execute shell commands on "
+                f"{self.name}\n"
+                f"command: {cmd}\n"
+                f"return_code: {result[self.name].rc}\n"
+                f"stdout: {result[self.name].stdout}\n"
+                f"stderr: {result[self.name].stderr}\n"
+                f"kernel_log: {kernel_log}"
+            )
+
+        return result[self.name].stdout.strip(), kernel_log.strip()

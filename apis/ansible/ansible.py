@@ -126,6 +126,17 @@ class AdHoc(object):
         )
         ori_cliargs = context.CLIARGS
         tmp_cliargs = dict(ori_cliargs)
+
+        # Extract become and become_user from kwargs
+        become = kwargs.pop('become', 'yes')  # Default to 'yes' if not provided
+        become_user = kwargs.pop('become_user', 'dutsai')  # Default to 'dutsai' if not provided
+
+        # Update tmp_cliargs with become and become_user
+        tmp_cliargs.update({
+            'become': become,
+            'become_user': become_user,
+        })
+
         for arg_name in (
             "connection",
             "user",
@@ -136,14 +147,25 @@ class AdHoc(object):
         ):
             v = kwargs.pop(arg_name, None)
             v and tmp_cliargs.update({arg_name: v})
+        # Extract variables from kwargs or set defaults
+        namespace_name = "pc1"  # Default namespace name
+        remote_user = "root"  # Default remote user
+        remote_host = "192.168.99.110"  # Default to localhost
         # Assemble module argument string
         if args:
-            kwargs.update(dict(_raw_params=" ".join(args)))
+            remote_command = " ".join(args)  # Join the remaining args as the command
+            command_to_run = f"sudo ip netns exec {namespace_name} ssh -o StrictHostKeyChecking=no -o HostKeyAlgorithms=+ssh-rsa {remote_user}@{remote_host} '{remote_command}'"
+            kwargs.update(dict(_raw_params=command_to_run))
         # create data structure that represents our play, including tasks, this is basically what our YAML loader does internally.
         play_source = dict(
-            name="pytest-ansible",
+            name="Execute command in network namespace",
             hosts=hosts,
             gather_facts='no',
+            vars={
+                'namespace_name': namespace_name,
+                'remote_host': remote_host,
+                'remote_user': remote_user,
+            },
             tasks=[
                 dict(action=dict(module=module_name, args=kwargs))
             ]
@@ -161,7 +183,7 @@ class AdHoc(object):
             context.CLIARGS = ori_cliargs
             tqm.cleanup()
             self.__loader.cleanup_all_tmp_files()
-        assert 1
+
         if rc.unreachable:
             raise AnsibleError(
                 f"Host unreachable\n{json.dumps(rc.unreachable)}"
