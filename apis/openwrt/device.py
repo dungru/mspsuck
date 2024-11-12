@@ -75,7 +75,7 @@ class Dut(object):
 
         return result[self.name].stdout.strip(), kernel_log.strip()
 
-    def execute_command(self, cmd):
+    def exec_cmd(self, cmd):
         """Helper method to execute a command and return the output."""
         try:
             result = subprocess.run(cmd, shell=True, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
@@ -88,20 +88,20 @@ class Dut(object):
         """Execute a command in a local network namespace via SSH."""
         # Clear the kernel log
         clear_log_cmd = f"sudo ip netns exec {self.namespace_name} ssh -o StrictHostKeyChecking=no -o HostKeyAlgorithms=+ssh-rsa {self.remote_user}@{self.remote_host} 'dmesg -c'"
-        self.execute_command(clear_log_cmd)
+        self.exec_cmd(clear_log_cmd)
 
         # Execute the provided command
         command_to_run = f"sudo ip netns exec {self.namespace_name} ssh -o StrictHostKeyChecking=no -o HostKeyAlgorithms=+ssh-rsa {self.remote_user}@{self.remote_host} '{cmd};dmesg -c'"
-        return self.execute_command(command_to_run)
+        return self.exec_cmd(command_to_run)
 
     def shell_ns(self, cmd, **kwargs):
-        clear_log_result = self.__adhoc.run_ns([self.name], "raw", "dmesg -c", **kwargs)
+        clear_log_result = self.__adhoc.run_ns([self.name], "shell", "dmesg -c", **kwargs)
         if clear_log_result[self.name].failed:
             print(f"Failed to clear kernel log: {clear_log_result[self.name].stderr}")
 
-        result = self.__adhoc.run_ns([self.name], "raw", cmd, **kwargs)
+        result = self.__adhoc.run_ns([self.name], "shell", cmd, **kwargs)
 
-        kernel_log_result = self.__adhoc.run([self.name], "raw", "dmesg -c", **kwargs)
+        kernel_log_result = self.__adhoc.run([self.name], "shell", "dmesg -c", **kwargs)
         kernel_log = kernel_log_result[self.name].stdout if not kernel_log_result[self.name].failed else "Failed to retrieve kernel log"
 
         if result[self.name].failed:
