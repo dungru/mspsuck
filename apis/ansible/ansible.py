@@ -114,3 +114,57 @@ class AdHoc(object):
             )
 
         return rc.contacted
+
+    def run_ns(self, hosts, module_name, *args, **kwargs):
+        rc = ResultsCallback()
+        tqm = TaskQueueManager(
+            inventory=self.__inv_mgr,
+            variable_manager=self.__var_mgr,
+            loader=self.__loader,
+            passwords=self.__passwords,
+            stdout_callback=rc,
+        )
+        ori_cliargs = context.CLIARGS
+        tmp_cliargs = dict(ori_cliargs)
+        for arg_name in (
+            "connection",
+            "user",
+            "become",
+            "become_method",
+            "become_user",
+            "module_path",
+        ):
+            v = kwargs.pop(arg_name, None)
+            v and tmp_cliargs.update({arg_name: v})
+        # Assemble module argument string
+        if args:
+            kwargs.update(dict(_raw_params=" ".join(args)))
+        # create data structure that represents our play, including tasks, this is basically what our YAML loader does internally.
+        play_source = dict(
+            name="pytest-ansible",
+            hosts=hosts,
+            gather_facts='no',
+            tasks=[
+                dict(action=dict(module=module_name, args=kwargs))
+            ]
+        )
+        # Create play object, playbook objects use .load instead of init or new methods,
+        # this will also automatically create the task objects from the info provided in play_source
+        play = Play().load(play_source, variable_manager=self.__var_mgr, loader=self.__loader)
+        context.CLIARGS = ImmutableDict(tmp_cliargs)
+        # Actually run it
+        try:
+            tqm.run(play)  # most interesting data for a play is actually sent to the callback's methods
+        finally:
+            # Always need to cleanup child procs and the structures we use
+            # to communicate with them.
+            context.CLIARGS = ori_cliargs
+            tqm.cleanup()
+            self.__loader.cleanup_all_tmp_files()
+        assert 1
+        if rc.unreachable:
+            raise AnsibleError(
+                f"Host unreachable\n{json.dumps(rc.unreachable)}"
+            )
+
+        return rc.contacted

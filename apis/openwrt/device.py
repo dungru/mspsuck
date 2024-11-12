@@ -1,4 +1,7 @@
 # -*- coding: utf-8 -*-
+import logging
+import subprocess
+
 from apis.openwrt.errors import OpenwrtError
 
 
@@ -19,6 +22,9 @@ class Dut(object):
             if host.vars.get("password")
             else adhoc.group_vars.get("ansible_ssh_pass")
         )
+        self.namespace_name = host.vars.get("namespace_name")
+        self.remote_host = host.vars.get("remote_host")
+        self.remote_user = host.vars.get("remote_user")
 
         self.__adhoc = adhoc
         self.__handler_chain = []
@@ -68,3 +74,22 @@ class Dut(object):
             )
 
         return result[self.name].stdout.strip(), kernel_log.strip()
+
+    def execute_command(self, cmd):
+        """Helper method to execute a command and return the output."""
+        try:
+            result = subprocess.run(cmd, shell=True, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+            return result.stdout.strip()
+        except subprocess.CalledProcessError as e:
+            logging.error(f"Command failed: {self.name}: {cmd}\nError: {e.stderr.strip()}")
+            raise OpenwrtError(f"Command execution failed: {e.stderr.strip()}")
+
+    def shell_local_ns(self, cmd, **kwargs):
+        """Execute a command in a local network namespace via SSH."""
+        # Clear the kernel log
+        clear_log_cmd = f"sudo ip netns exec {self.namespace_name} ssh -o StrictHostKeyChecking=no -o HostKeyAlgorithms=+ssh-rsa {self.remote_user}@{self.remote_host} 'dmesg -c'"
+        self.execute_command(clear_log_cmd)
+
+        # Execute the provided command
+        command_to_run = f"sudo ip netns exec {self.namespace_name} ssh -o StrictHostKeyChecking=no -o HostKeyAlgorithms=+ssh-rsa {self.remote_user}@{self.remote_host} '{cmd};dmesg -c'"
+        return self.execute_command(command_to_run)
