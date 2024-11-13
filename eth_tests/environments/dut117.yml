@@ -10,13 +10,6 @@ topology:
     dut3:
       ansible_host: 127.0.0.1
       namespace_name: pc1
-      remote_host: 192.168.99.110
+      remote_host: 192.168.99.117
       remote_user: root
-    dut4:
-      ansible_host: 127.0.0.1
-      namespace_name: pc1
-      remote_host: 192.168.99.110
-      remote_user: root
-      # username: dutsai
-      # password: 1
 
