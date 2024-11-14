@@ -1,0 +1,11 @@
+topology:
+  vars:
+    ansible_ssh_user: dutsai
+    ansible_ssh_pass: 1
+  hosts:
+    dut3:
+      ansible_host: 127.0.0.1
+      namespace_name: pc1
+      remote_host: 192.168.99.110
+      remote_user: root
+
