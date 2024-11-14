@@ -4,12 +4,7 @@ topology:
     ansible_ssh_pass:
   hosts:
     dut1:
-      ansible_host: 192.168.5.114
+      ansible_host: 192.168.5.117
     dut2:
-      ansible_host: 192.168.5.115
-    dut3:
-      ansible_host: 127.0.0.1
-      namespace_name: pc1
-      remote_host: 192.168.99.117
-      remote_user: root
+      ansible_host: 192.168.5.118
 
